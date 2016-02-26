@@ -1,7 +1,5 @@
-
 ## This is a common makefile for docker management.
 ## Include in later makefiles, which define the overrides below.
-
 
 
 # Variables to override in including makefiles:
@@ -12,7 +10,7 @@ EXTRARUNARGS:=
 
 # Common configuration options (make sure to use =, not :=, for late binding)
 
-REPO=monroe1.cs.kau.se:5000
+REPO=monroe
 DOCKERFILE=$(CONTAINER).docker
 CONTAINERTAG=monroe/$(CONTAINER)
 
@@ -35,8 +33,7 @@ push:
 	docker push  $(REPO)/$(CONTAINERTAG)
 
 image:
-	docker build -f $(DOCKERFILE) -t $(CONTAINERTAG) .  
-	docker tag $(CONTAINERTAG) $(REPO)/$(CONTAINERTAG)
+	docker build -f $(DOCKERFILE) -t $(CONTAINERTAG):latest .  
 
 run-local: stop
 	@echo "Starting container."

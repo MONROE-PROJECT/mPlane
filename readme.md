@@ -12,7 +12,7 @@ The Tstat experiment directory is based on ping experiment and contains the mPla
 Tstat RRD logs and compressed log stored on host node in /output/tstat_rrd and /output/tstat_log respectively.
 The RRD log exported by the mplane rrd exporter. 
 
-The mplane docker image pushed into monroe1.cs.kau.se:5000/monroe/tstat. For user and password contact KaU.
+The mplane docker image pushed into monroe/tstat. For user and password contact KaU.
 
 TODO: 
 * using Monroe metadata exporter to export /output/tstat_log
@@ -30,7 +30,7 @@ Create the docker image:
 * make image
  
 Run the container:
-* docker run --net=host -d -v /outdir:/outdir -v /etc/nodeid:/nodeid:ro monroe1.cs.kau.se:5000/monroe/tstat PASSPHRASE
+* docker run --net=host -d -v /outdir:/outdir -v /etc/nodeid:/nodeid:ro monroe/tstat PASSPHRASE
 (send an email to ali.safari@polito.it to know PASSPHRASE)
 
 ## Docker misc usage

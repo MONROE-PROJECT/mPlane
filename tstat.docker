@@ -1,6 +1,6 @@
 # Make the mplane image from the monroe_base
 
-FROM monroe1.cs.kau.se:5000/monroe/monroe_base
+FROM monroe/base
 
 MAINTAINER ali.safari@polito.it
 
