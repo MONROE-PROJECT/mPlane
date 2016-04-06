@@ -67,7 +67,7 @@ sed -i "/key =*/c\key = PKI\/ca\/certs\/Monroe_Node_$NODE_ID-plaintext.key" $pro
 sed -i "/cert =*/c\cert = PKI\/ca\/certs\/Monroe_Node_$NODE_ID.crt" $protocol_ri_path$relative_path_to_conf"export_"$conf_file
 sed -i "/key =*/c\key = PKI\/ca\/certs\/Monroe_Node_$NODE_ID-plaintext.key" $protocol_ri_path$relative_path_to_conf"export_"$conf_file
 sed -i '/runtimeconf =/c\runtimeconf = \/opt\/monroe\/monroe-mplane\/tstat-conf\/runtime.conf' $protocol_ri_path$relative_path_to_conf$conf_file
-sed -i '/tstat_rrd_path =/c\tstat_rrd_path = \/opt\/monroe-mplane\/tstat-rrd\/rrd_tstat\/' $protocol_ri_path$relative_path_to_conf$conf_file
+sed -i '/tstat_rrd_path =/c\tstat_rrd_path = \/opt\/monroe-mplane\/rrd_tstat\/' $protocol_ri_path$relative_path_to_conf$conf_file
 sed -i '/client_host = 127.0.0.1/c\client_host = 130.192.181.137' $protocol_ri_path$relative_path_to_conf$conf_file
 sed -i '/listen-cap-link*/c\listen-cap-link = https:\/\/130.192.181.137:8888\/' $protocol_ri_path$relative_path_to_conf$conf_file
 sed -i "s/System_ID.*/System_ID = $NODE_ID/g" $protocol_ri_path$relative_path_to_conf$conf_file
