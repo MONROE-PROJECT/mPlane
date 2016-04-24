@@ -13,7 +13,7 @@ LOG_DIR="/var/log/syslog"
 date &>> $LOG_DIR
 
 ### Sitting the tstat-conf/subnets.txt file to distinguish between the internal and external networks
-#ifconfig | awk  'sub(/inet addr:/,""){ if($1!~'/^127/') print $1"/32"}'  > /opt/monroe/monroe-mplane/tstat-conf/subnets.txt 2>> $LOG_DIR
+ifconfig | awk  'sub(/inet addr:/,""){ if($1!~'/^127/') print $1"/32"}'  > /opt/monroe/monroe-mplane/tstat-conf/subnets.txt 2>> $LOG_DIR
 
 
 ### start tstat, it is reading the tstat.conf file on the current directory
