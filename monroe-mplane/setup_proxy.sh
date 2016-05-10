@@ -38,6 +38,7 @@ if [ -d $protocol_ri_path"/protocol-ri" ]
 then
 	cd protocol-ri/
 	echo "git pull protocol-ri!"
+	git reset --hard 2>>$LOG_DIR
 	git pull 2>>$LOG_DIR
 	cd ..
 else
