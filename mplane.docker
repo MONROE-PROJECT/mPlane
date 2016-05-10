@@ -5,13 +5,12 @@ FROM monroe/base
 MAINTAINER ali.safari@polito.it
 
 # Installing PACKAGES 
-RUN apt-get clean
-RUN curl http://download.opensuse.org/repositories/devel:/tools:/mytestbed:/stable/Debian_7.0/Release.key > Release.key; apt-key add - < Release.key
-RUN curl http://download.opensuse.org/repositories/devel:/tools:/mytestbed:/stable/Debian_7.0/Release.key > Release.key  ;apt-key add - < Release.key
-RUN curl http://download.opensuse.org/repositories/home:/tohojo:/flent/Debian_8.0/Release.key > Release.key  ;apt-key add - < Release.key
-RUN apt-get clean
-
-RUN apt-get update && apt-get upgrade -y && apt-get install -y \
+RUN apt-get clean \
+&& curl http://download.opensuse.org/repositories/devel:/tools:/mytestbed:/stable/Debian_7.0/Release.key > Release.key; apt-key add - < Release.key \ 
+&& curl http://download.opensuse.org/repositories/devel:/tools:/mytestbed:/stable/Debian_7.0/Release.key > Release.key  ;apt-key add - < Release.key \
+&& curl http://download.opensuse.org/repositories/home:/tohojo:/flent/Debian_8.0/Release.key > Release.key  ;apt-key add - < Release.key \
+&& apt-get clean \
+&& apt-get update && apt-get upgrade -y && apt-get install -y \
     rrdtool  \ 
     python3-pip \
     librrd-dev \
@@ -19,25 +18,21 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y \
     libtool \
     pcaputils \
     libcap2 \ 
-    git 
-
-# Installing Python PACKAGES
-RUN pip3 install --upgrade urllib3 \
+    git \
+&& pip3 install --upgrade urllib3 \
  	tornado \
  	PyYAML \
 	psutil \
 	py-dateutil \
 	Unidecode \ 
-	rrdtool
+	rrdtool \
+&& rm -rf  /var/lib/apt
 
-COPY files/* /opt/monroe/
+COPY files/* /opt/monroe/ 
+RUN dpkg -i /opt/monroe/tstat_3.0-1_amd64.deb \
+&& rm -rf /opt/monroe/tstat_3.0-1_amd64.deb 
 
-# Install from the debain package  
-RUN dpkg -i /opt/monroe/tstat_3.0-1_amd64.deb
-# Remove the deb file 
-RUN rm -rf /opt/monroe/tstat_3.0-1_amd64.deb
-
-COPY monroe-mplane /opt/monroe/monroe-mplane/
+COPY monroe-mplane /opt/monroe/monroe-mplane/ 
 
 WORKDIR /opt/monroe/monroe-mplane/
 
