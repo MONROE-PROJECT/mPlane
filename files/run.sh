@@ -29,8 +29,12 @@ then
 	mkdir /outdir/tstat_log
 fi
 
-tar -xvzf protocol-ri.tar.gz 2>>$LOG_DIR  1>>$TSTAT_LOG
-rm  protocol-ri.tar.gz
+if [ ! -e protocol-ri.tar.gz ]
+then
+	echo "Extract local copy of protocol-ri !"
+	tar -xvzf protocol-ri.tar.gz 2>>$LOG_DIR  1>>$TSTAT_LOG
+	rm  protocol-ri.tar.gz
+fi
 
 # Main loop for mPlane container
 while true; 
