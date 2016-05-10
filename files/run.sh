@@ -9,7 +9,7 @@ SETUP_PROXY="setup_proxy.sh"
 
 echo "mPlane Container starts !"
 
-TSTAT_PID=10000
+TSTAT_PID=66666
 PROXY_PID=99999
 
 # Create the log directories if dont exist
@@ -22,11 +22,6 @@ if [ ! -d /outdir/tstat_rrd ]
 then
 	echo "mkdir tstat_rrd !"
 	mkdir /outdir/tstat_rrd
-fi
-if [ ! -d /outdir/tstat_log ]
-then
-	echo "mkdir tstat_log !"
-	mkdir /outdir/tstat_log
 fi
 
 if [ ! -e protocol-ri.tar.gz ]
