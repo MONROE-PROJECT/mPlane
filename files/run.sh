@@ -24,7 +24,7 @@ then
 	mkdir /outdir/tstat_rrd
 fi
 
-if [ ! -e protocol-ri.tar.gz ]
+if [ -e protocol-ri.tar.gz ]
 then
 	echo "Extract local copy of protocol-ri !"
 	tar -xvzf protocol-ri.tar.gz 2>>$LOG_DIR  1>>$TSTAT_LOG
