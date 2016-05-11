@@ -32,21 +32,6 @@ then
 fi
 
 
-# Clone or Pull the protocol-ri from mPlane's monroe brance on github
-if [ -d $protocol_ri_path"/protocol-ri" ]
-
-then
-	cd protocol-ri/
-	echo "git pull protocol-ri!"
-	git reset --hard 2>>$LOG_DIR
-	git pull 2>>$LOG_DIR
-	cd ..
-else
-	# Clone the mplane protocol-ri !
-	echo "git clone protocol-ri!"
-	git clone -b monroe https://github.com/fp7mplane/protocol-ri.git 2>>$LOG_DIR
-fi
-
 # check the certificate for NodeID if does not exist, generate it 
 name="Monroe_Node_"$NODE_ID
 MPLANE_PKI_DIR=$protocol_ri_path"protocol-ri/PKI/ca"
