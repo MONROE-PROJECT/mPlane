@@ -1,1 +1,1 @@
-ip and not net 127.0.0.1
+ip and not net 127.0.0.0/8 and not net 172.17.0.0/16
