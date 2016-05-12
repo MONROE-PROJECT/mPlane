@@ -7,14 +7,13 @@ MAINTAINER ali.safari@polito.it
 # Installing PACKAGES 
 RUN apt-get -y clean \
 && apt-get -y autoclean \
-&& apt-get --fix-missing install -y \
+&& apt-get install -y \
     rrdtool  \ 
     python3-pip \
     librrd-dev \
-    libcap-dev \
+    libcap2 \
     libtool \
     pcaputils \
-    libcap2 \ 
 && pip3 install --upgrade urllib3 \
  	tornado \
  	PyYAML \
@@ -27,7 +26,6 @@ COPY files/* /opt/monroe/
 RUN dpkg -i /opt/monroe/tstat_3.0-1_amd64.deb \
 && rm -rf /opt/monroe/tstat_3.0-1_amd64.deb \
 && apt-get --purge -y remove  librrd-dev \
-    libcap-dev \
     libtool \
     pcaputils \
     libcap2 \ 

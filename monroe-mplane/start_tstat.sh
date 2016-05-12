@@ -35,8 +35,12 @@ fi
 
 cd /opt/monroe/monroe-mplane/
 sed -i "/-s/c\-s \/outdir\/"$NODE_ID"        # output dir for log files" tstat.conf 2>> $LOG_DIR
+
 ### Sitting the tstat-conf/subnets.txt file to distinguish between the internal and external networks
-ip -4  addr  | grep inet | awk '{print $2}' > tstat-conf/subnets.txt 2>> $LOG_DIR
+#ip -4  addr  | grep inet | awk '{print $2}' > tstat-conf/subnets.txt 2>> $LOG_DIR
+# Assume 10.0.0.0/8 and 192.168.0.0/24 are internal networks
+# These net 127.0.0.0/8 and net 172.17.0.0/16 dont captured
+
 
 ### start tstat, it is reading the tstat.conf file on the current directory
 tstat  
