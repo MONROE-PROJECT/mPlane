@@ -9,38 +9,20 @@
 
 
 ###  SETUP
-LOG_DIR="/var/log/syslog"
-NODEID_PATH="/nodeid" 
-
-date &>> $LOG_DIR
-
-if [ -s $NODEID_PATH ]
-then
-	read -r NODE_ID < $NODEID_PATH 2>>$LOG_DIR
-else
-	bash get_node_id.sh 2>>$LOG_DIR
-	read -r NODE_ID < $NODEID_PATH 2>>$LOG_DIR
-fi
-
-if [ -z $NODE_ID ]
-then
-	echo "There is NO NodeID in /nodeid !" 
-	exit $?
-fi
-if [ ! -d "/outdir/"$NODE_ID ]
-then
-	echo "mkdir /outdir/"$NODE_ID" !"
-	mkdir "/outdir/"$NODE_ID
-fi
 
 cd /opt/monroe/monroe-mplane/
-sed -i "/-s/c\-s \/outdir\/"$NODE_ID"        # output dir for log files" tstat.conf 2>> $LOG_DIR
 
 ### Sitting the tstat-conf/subnets.txt file to distinguish between the internal and external networks
-#ip -4  addr  | grep inet | awk '{print $2}' > tstat-conf/subnets.txt 2>> $LOG_DIR
+
 # Assume 10.0.0.0/8 and 192.168.0.0/24 are internal networks
 # These net 127.0.0.0/8 and net 172.17.0.0/16 dont captured
 
 
 ### start tstat, it is reading the tstat.conf file on the current directory
-tstat  
+for interface in  $(ip -o link show | awk -F': ' '{if ($2 != "lo" && $2 != "docker0" && $2 != "metadata") print $2}');
+do 
+    if [ -z "$(ps -afx | grep -v grep | grep "tstat -l -i $interface -Z -f tstat-conf/filter.txt -N tstat-conf/subnets.txt -R tstat-conf/rrd.conf -H tstat-conf/histo.conf -T tstat-conf/runtime.conf -r /outdir/tstat_rrd/$interface -s /tstat_log/$interface")" ]; then 
+        tstat -l -i $interface -Z -f tstat-conf/filter.txt -N tstat-conf/subnets.txt -R tstat-conf/rrd.conf -H tstat-conf/histo.conf -T tstat-conf/runtime.conf -r /outdir/tstat_rrd/$interface -s /tstat_log/$interface   &
+    
+    fi
+done

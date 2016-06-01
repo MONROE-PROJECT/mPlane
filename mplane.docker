@@ -4,36 +4,36 @@ FROM monroe/base
 
 MAINTAINER ali.safari@polito.it
 
-# Installing PACKAGES 
+# Installing PACKAGES
 RUN apt-get -y clean \
 && apt-get -y autoclean \
 && apt-get install -y \
-    rrdtool  \ 
+    rrdtool  \
     python3-pip \
     librrd-dev \
     libcap2 \
     libtool \
     pcaputils \
 && pip3 install --upgrade urllib3 \
- 	tornado \
- 	PyYAML \
-	psutil \
-	py-dateutil \
-	Unidecode \ 
-	rrdtool 
+     tornado \
+     PyYAML \
+    psutil \
+    py-dateutil \
+    Unidecode \
+    rrdtool
 
-COPY files/* /opt/monroe/ 
+COPY files/* /opt/monroe/
 RUN dpkg -i /opt/monroe/tstat_3.0-1_amd64.deb \
 && rm -rf /opt/monroe/tstat_3.0-1_amd64.deb \
-&& apt-get --purge -y remove  librrd-dev \
+&& apt-get -y remove  librrd-dev \
     libtool \
     pcaputils \
-    libcap2 \ 
+    libcap2 \
 && apt-get -y autoclean \
-&& apt-get --purge -y autoremove \
-&& rm -rf  /var/lib/apt 
+&& apt-get -y autoremove \
+&& rm -rf  /var/lib/apt
 
-COPY monroe-mplane /opt/monroe/monroe-mplane/ 
+COPY monroe-mplane /opt/monroe/monroe-mplane/
 
 WORKDIR /opt/monroe/monroe-mplane/
 
