@@ -1,24 +1,22 @@
 #!/bin/sh
-set -e
+# -*- coding: utf-8 -*-
 
-PASS=$1
+# Author: Ali Safari Khatouni
+# Date: June 2016
+# License: GNU General Public License v3
+# Developed for use by the EU H2020 MONROE project
+
+set -e
 LOG_DIR="/var/log/syslog"
-TSTAT_LOG="/tmp/tstat.log"
 ROOT_PATH="/opt/monroe/monroe-mplane/"
-SUP_IP="130.192.181.137"
-TSTAT="start_tstat.sh"
-SETUP_PROXY="setup_proxy.sh"
 
 echo "mPlane Container starts !"
+NODEID_PATH="/nodeid"
+TIMER=0
 
-CURRENT_INTERFACE="NONE"
-IP="130.192.181.137"
-# Create the log directories if dont exist
+date &>$LOG_DIR
 
-NODEID_PATH="/nodeid" 
-
-date &>> $LOG_DIR
-
+# Read the node id
 if [ -s $NODEID_PATH ]
 then
     read -r NODE_ID < $NODEID_PATH 2>>$LOG_DIR
@@ -32,88 +30,102 @@ then
     exit $?
 fi
 
-if [ ! -d /outdir ]
+# Create the sub directories for results
+RSYNC_DIR="/monroe/results/"$NODE_ID
+SHARED_DIR="/monroe/tstat/"$NODE_ID
+TSTAT_DIR="/opt/monroe/monroe-mplane/tstat-conf/"
+
+
+if [ ! -d $RSYNC_DIR ]
 then
-    echo "mkdir outdir !"
-    mkdir /outdir
+    mkdir -p $RSYNC_DIR 2>>$LOG_DIR 1>>$LOG_DIR
 fi
 
-if [ ! -d /tstat_log ]
+if [ ! -d $SHARED_DIR ]
 then
-    echo "mkdir tstat_log !"
-    mkdir /tstat_log
+    mkdir -p $SHARED_DIR 2>>$LOG_DIR 1>>$LOG_DIR
 fi
 
-
-for interface in  $(ip -o link show | awk -F': ' '{if ($2 != "lo" && $2 != "docker0" && $2 != "metadata") print $2}');
-do 
-
-    if [ ! -d "/outdir/$NODE_ID/$interface" ]
-    then
-        echo "/outdir/$NODE_ID/$interface" 
-        mkdir -p "/outdir/$NODE_ID/$interface"
-    fi
-
-    if [ ! -d "/outdir/tstat_rrd/$interface" ]
-    then
-        echo "/outdir/tstat_rrd/$interface"
-        mkdir -p "/outdir/tstat_rrd/$interface"
-    fi
-
-    if [ ! -d "/tstat_log/$interface" ]
-    then
-        echo "/tstat_log/$interface"
-        mkdir -p "/tstat_log/$interface"
-    fi
-
-
-done
-
-
-if [ -e protocol-ri.tar.gz ]
+if [ ! -d $SHARED_DIR/tstat_rrd ]
 then
-    echo "Extract local copy of protocol-ri !"
-    tar -xvzf protocol-ri.tar.gz 2>>$LOG_DIR  1>>$TSTAT_LOG
-    rm  protocol-ri.tar.gz
+    mkdir -p $SHARED_DIR/tstat_rrd 2>>$LOG_DIR 1>>$LOG_DIR
 fi
+
 
 # Main loop for mPlane container
 while true;
 do
-    # If the tstat is not running, start it
-    bash $ROOT_PATH$TSTAT  2>>$LOG_DIR  1>>$TSTAT_LOG
-    # If the tstat-proxy is not running, start it
-    if [ ! "$(netstat -anp | grep '130.192.181.137:8889' | grep -v grep | grep 'ESTABLISHED')" -o ! "$(netstat -anp | grep '130.192.181.142:9000' | grep -v grep | grep 'ESTABLISHED')" -o -z "$( ip link|  grep $CURRENT_INTERFACE | grep -v grep | grep 'UP')" ]; then  
-        # Setup Tstat proxy to interact with Supervisor and Repository
-        bash $ROOT_PATH$SETUP_PROXY $SUP_IP $PASS  2>>$LOG_DIR 1>>$TSTAT_LOG  
-        # Start Tstat proxy to interact with Supervisor and Repository
-        cd "/opt/monroe/monroe-mplane/protocol-ri/"
-        export PYTHONPATH="/opt/monroe/monroe-mplane/protocol-ri/"
-        #Start Tstat Proxy
-        for PID in $(ps -ef | grep protocol-ri/mplane/components | grep -v grep | awk '{print $2}'); do
-            kill -9 $PID
-            sleep 60
-        done
-        /opt/monroe/monroe-mplane/protocol-ri/scripts/mpcom --config /opt/monroe/monroe-mplane/protocol-ri/mplane/components/tstat/conf/tstat.conf &
-        sleep 30
-        CURRENT_INTERFACE=$(ip route get $IP | grep -Po '(?<=(dev )).*(?= src)')
-    fi    
-    sleep 900
+    TIMER=$((TIMER+1))
 
 
-    for interface in  $(ip -o link show | awk -F': ' '{if ($2 != "lo" && $2 != "docker0" && $2 != "metadata") print $2}');
+    # Run Tstat for each interface 
+    for INTERFACE in  $(ip -o link show | awk -F': ' '{print $2}' | awk -F "@" '{print $1}' | sed 's/[ \t].*//;/^\(lo\|\)$/d;/^\(docker0\|\)$/d;/^\(metadata\|\)$/d');
     do 
-    DIR="/tstat_log/$interface/"
-    LATEST=$(ls -rtl $DIR | tail -n 1 | grep out | awk '{print $NF}')
-        for FILE in $(ls -rtl $DIR | grep out | awk '{print $NF}') ; do
-            if [ $LATEST != $FILE ]; then
-                cp -r $DIR$FILE "/outdir/$NODE_ID/$interface" 
-                rm -rf $DIR$FILE
-            fi
-        done
+        if [ -z "$(ps -afx | grep -v grep | grep "tstat -l -i $INTERFACE")" ]; then
+            tstat -l -i $INTERFACE -f $TSTAT_DIR"filter.txt" -N $TSTAT_DIR"subnets.txt" -R $TSTAT_DIR"rrd.conf" -H $TSTAT_DIR"histo.conf" -T $TSTAT_DIR"runtime.conf" -r $SHARED_DIR"/tstat_rrd/"$INTERFACE -s $SHARED_DIR/$INTERFACE  2>>$LOG_DIR 1>>$LOG_DIR  &    
+        fi
     done
 
+    # Python script for fetching the latest updated RRD files
+    if [ -z "$(ps -ef | grep "fetch_rrd.py" | grep -v grep | awk '{print $2}')" ]; then  
+        # fetch rrd files
+        python3 fetch_rrd.py $SHARED_DIR"/tstat_rrd/"  $RSYNC_DIR  2>/dev/null 1>>$LOG_DIR &
+    fi      
 
+    TEMP_DIR=$SHARED_DIR"/*/"
+    # Keep that last two hours of log before moving to the rsync directory
+    # It will be rsynced and remove after few mintues in rsync directory
+    for DIR in $TEMP_DIR;
+    do
+        INTERFACE=$(echo $DIR | awk -F "/" '{print $(NF-1)}')
+        LATEST=$(ls -rtl $DIR | tail -n 3 | grep "\.out" | awk '{print $NF}' |  tr -d ' ' | tr "\n" " ")
+        EDITING_FOLDER=$(ls -rtl $DIR | tail -n 1 | grep "\.out" | awk '{print $NF}' |  tr -d ' ')
+
+
+        if [ $TIMER -ge 6 -a $INTERFACE != "tstat_rrd" ]; then
+            curl --interface $INTERFACE 192.168.0.1 2>/dev/null 1>>$LOG_DIR 
+        fi
+
+
+        for FILE in $(ls -rtl $DIR | grep "\.out" | awk '{print $NF}' |  tr -d ' ') ; do
+            Found="false"
+            for line in $LATEST ; do
+                if [ ! -d $RSYNC_DIR/$INTERFACE/ ] ; then
+                    mkdir $RSYNC_DIR/$INTERFACE/
+                fi 
+                if [ "$line" = "$FILE" ] ; then
+                    Found="true"
+                fi
+            done
+
+            for f in $(find $DIR$FILE -type f -not -name '*.gz' -printf "%f\n"); do
+
+                SCRIPT_DIR=$(pwd);
+                cd $DIR$FILE
+                tar -czf $f".gz" $f 2>/dev/null 1>>$LOG_DIR
+                cd $SCRIPT_DIR
+            done
+
+            if [ "$EDITING_FOLDER" != "$FILE" ] ; then
+                for f in $(find $DIR$FILE -type f -not -name '*.gz' ); do
+                    rm $f
+                done
+
+            elif [ "$EDITING_FOLDER" = "$FILE" ] ; then
+                rsync -r --include='*gz' --include="$FILE/" --include='*/' --exclude='*' $DIR$FILE $RSYNC_DIR/$INTERFACE/  2>/dev/null 1>>$LOG_DIR
+            fi
+
+            if [ "$Found" = "false" ] ; then
+                rm -rf $DIR$FILE  2>/dev/null 1>>$LOG_DIR
+            fi
+        done
+    done    
+    sleep 10
+
+    # Generate fake traffic to  modem to regulate the tstat folder creation in low traffic load
+    if [ $TIMER -ge 6 ]; then
+        TIMER=0       
+    fi
 
 done
 echo "mPlane Container exit ! "
