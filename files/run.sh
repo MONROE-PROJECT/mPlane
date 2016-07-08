@@ -98,12 +98,8 @@ do
                 fi
             done
 
-            for f in $(find $DIR$FILE -type f -not -name '*.gz' -printf "%f\n"); do
-
-                SCRIPT_DIR=$(pwd);
-                cd $DIR$FILE
-                tar -czf $f".gz" $f 2>/dev/null 1>>$LOG_DIR
-                cd $SCRIPT_DIR
+            for f in $(find $DIR$FILE -type f -not -name '*.gz'); do
+                gzip -k -c $f > $f".gz" 
             done
 
             if [ "$EDITING_FOLDER" != "$FILE" ] ; then
