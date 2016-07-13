@@ -25,10 +25,6 @@ RUN apt-get -y clean \
 COPY files/* /opt/monroe/
 RUN dpkg -i /opt/monroe/tstat_3.1-1_amd64.deb \
 && rm -rf /opt/monroe/tstat_3.1-1_amd64.deb \
-&& apt-get -y remove  librrd-dev \
-    libtool \
-    pcaputils \
-    libcap2 \
 && apt-get -y autoclean \
 && apt-get -y autoremove \
 && rm -rf  /var/lib/apt
