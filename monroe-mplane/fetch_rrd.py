@@ -14,16 +14,15 @@ import rrdtool
 import sys
 import gzip
 
-# default start time is the decision date on gio 16 giu 2016
 # interval is 300 seconds for Tstat by default 
 
-def fetch_Tstat_RRD( path, output_path, start,interval=300):
+def fetch_Tstat_RRD( path, output_path,interval=300):
     """
     fetch all RRD files and dump them in compress file for each time
     the file create in the rsync  direcctory
 
     """
-    print ("UTC start time :" + str(start))
+    print ("UTC start time : " , time())
     while True:
         if (not isdir (path)):
             print ("RRD directory does not exist !\n ")
@@ -36,29 +35,32 @@ def fetch_Tstat_RRD( path, output_path, start,interval=300):
             # fetch RRD files till the process killed by the function -> change_conf_indirect_export
             result_list = []
             if(last_fetched_time == 0):
-                startTime = str (start - interval)
+                startTime = str (int(time()) - interval)
             else:
                 startTime = str(last_fetched_time)
 
+
             endTime = str (int(time()))
+
+            if endTime < startTime:
+                print("Start time is after End time!!!!!!!!!!!!!!" )
+                startTime = endTime - interval
+
             rrd_files = [ f for f in listdir(join(path,interface)) if isfile(join(path,interface,f)) and (".rrd" in f) ]
             for f in rrd_files :
                 rrdMetric = rrdtool.fetch( join(path,interface,f),  "AVERAGE" ,'--resolution', str(interval), '-s', startTime, '-e', endTime)
                 rrd_time = rrdMetric[0][0]
-
+                last_fetched_time = rrdMetric[0][0] 
                 for tuple in rrdMetric[2]:
+                    rrd_time += interval
                     if tuple[0] is not None:
-                        rrd_time = rrd_time + interval
                         timestamp = float(rrd_time)
                         value = float(tuple[0])
                         metric = f
-                        if (rrd_time > last_fetched_time):
-                            last_fetched_time = int(rrd_time)
-
                         result_list.append((metric,timestamp,value))
-                                
+                        last_fetched_time = max (last_fetched_time , rrd_time)
+
             if len(result_list) > 0:
-                print ("result list size :    " + str(len (result_list)))
                 write_into_file(output_path, interface,result_list)
             write_latest_fetched_date( path,interface,last_fetched_time)
         sleep(interval)
@@ -91,4 +93,4 @@ def read_latest_fetched_data(path,interface):
     return 0
 
 if __name__ == '__main__':
-    fetch_Tstat_RRD( str(sys.argv[1]), str(sys.argv[2]), 1466513658 , 300)
+    fetch_Tstat_RRD( str(sys.argv[1]), str(sys.argv[2]) , 300)
