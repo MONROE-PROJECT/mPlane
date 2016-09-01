@@ -5,8 +5,8 @@ FROM monroe/base
 MAINTAINER ali.safari@polito.it
 
 # Installing PACKAGES
-RUN apt-get -y clean \
-&& apt-get -y autoclean \
+RUN apt-get update \
+&& apt-get upgrade -y \
 && apt-get install -y \
     rrdtool  \
     python3-pip \
