@@ -51,6 +51,7 @@ def fetch_Tstat_RRD( path, output_path,interval=300):
                 rrdMetric = rrdtool.fetch( join(path,interface,f),  "AVERAGE" ,'--resolution', str(interval), '-s', startTime, '-e', endTime)
                 rrd_time = rrdMetric[0][0]
                 last_fetched_time = rrdMetric[0][0] 
+                interval = rrdMetric[0][2]
                 for tuple in rrdMetric[2]:
                     rrd_time += interval
                     if tuple[0] is not None:
