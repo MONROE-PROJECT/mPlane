@@ -64,7 +64,7 @@ def fetch_Tstat_RRD( path, output_path,interval=300):
             if len(result_list) > 0:
                 write_into_file(output_path, interface,result_list)
             write_latest_fetched_date( path,interface,last_fetched_time)
-        sleep(interval)
+        sleep(30)
 
 
 def write_latest_fetched_date( path,interface,last_fetched_time):
