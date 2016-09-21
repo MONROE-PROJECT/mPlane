@@ -5,8 +5,8 @@ FROM monroe/base
 MAINTAINER ali.safari@polito.it
 
 # Installing PACKAGES
-RUN apt-get -y clean \
-&& apt-get -y autoclean \
+RUN apt-get update \
+&& apt-get upgrade -y \
 && apt-get install -y \
     rrdtool  \
     python3-pip \
@@ -14,20 +14,19 @@ RUN apt-get -y clean \
     libcap2 \
     libtool \
     pcaputils \
-&& pip3 install --upgrade urllib3 \
-     tornado \
-     PyYAML \
-    psutil \
-    py-dateutil \
-    Unidecode \
-    rrdtool
+&& pip3 install rrdtool
 
 COPY files/* /opt/monroe/
 RUN dpkg -i /opt/monroe/tstat_3.1-1_amd64.deb \
 && rm -rf /opt/monroe/tstat_3.1-1_amd64.deb \
-&& apt-get -y autoclean \
+&& apt-get -y autoclean  \
 && apt-get -y autoremove \
-&& rm -rf  /var/lib/apt
+&& rm -rf  /var/lib/apt  \
+&& rm -rf  /usr/lib/gcc \
+&& find /usr/share/doc -depth -type f ! -name copyright|xargs rm || true \ 
+&& find /usr/share/doc -empty|xargs rmdir || true \ 
+&& rm -rf /usr/share/man/* /usr/share/groff/* /usr/share/info/* /usr/share/lintian/* /usr/share/linda/* /var/cache/man/*
+
 
 COPY monroe-mplane /opt/monroe/monroe-mplane/
 
