@@ -7,31 +7,24 @@ This package includes a mPlane proxy and generic configuration files for [Tstat]
 
 A new branch in mPlane page added for Monroe project, see [here](https://github.com/fp7mplane/protocol-ri/tree/monroe).
 
-The Tstat experiment directory is based on ping experiment and contains the mPlane source code, Tstat v.3 debian package and script to make docker image and run the tstat and proxy in run.sh. 
+The mPlane experiment directory contains the Tstat v.3 debian package and script to make docker image and run the tstat in run.sh. 
 
-Tstat RRD logs and compressed log stored on host node in /output/tstat_rrd and /output/tstat_log respectively.
-The RRD log exported by the mplane rrd exporter. 
+Tstat RRD logs and compressed log stored on host node in /experiments/monroe/mplane respectively. These are exported to the monroe remote repository via management interface. The latest three generated Tstat's logs are shared with monroe experimenters on the "/experiments/monroe/tstat", it helps the Monroe users to use passive traces collected by Tstat during their experiment. 
 
-The mplane docker image pushed into monroe/mplane. For user and password contact KaU.
 
-TODO: 
-* using Monroe metadata exporter to export /output/tstat_log
-* Test --net=none
+The mplane docker image pushed into monroe/mplane. 
 
 
 ## Requirements
 The script must be able to have access to /nodeid and run get_nodeid. 
-These directories must exist and be writable by the user/process:    
-/output/    
-/tmp/    
 
 ## Example usage
 Create the docker image:
 * make image
  
 Run the container:
-* docker run --net=host -d -v /outdir:/outdir -v /etc/nodeid:/nodeid:ro monroe/mplane PASSPHRASE
-(send an email to ali.safari@polito.it to know PASSPHRASE)
+* docker run -i -t --net=host -d -v /mplane:/monroe/results -v /tstat:/monroe/tstat -v /etc/nodeid:/nodeid:ro monroe/mplane
+ 
 
 ## Docker misc usage
 
