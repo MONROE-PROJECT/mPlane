@@ -79,7 +79,7 @@ do
     # Python script for fetching the latest updated RRD files
     if [ -z "$(ps -ef | grep "fetch_rrd.py" | grep -v grep | awk '{print $2}')" ]; then  
         # fetch rrd files
-        python3 fetch_rrd.py $SHARED_DIR"/tstat_rrd/"  $RSYNC_DIR    2>>$LOG_DIR 1>>$LOG_DIR  &
+        python fetch_rrd.py $SHARED_DIR"/tstat_rrd/"  $RSYNC_DIR    2>>$LOG_DIR 1>>$LOG_DIR  &
     fi      
 
     TEMP_DIR=$SHARED_DIR"/*/"
