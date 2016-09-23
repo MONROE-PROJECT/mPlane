@@ -9,12 +9,11 @@ RUN apt-get update \
 && apt-get upgrade -y \
 && apt-get install -y \
     rrdtool  \
-    python3-pip \
     librrd-dev \
     libcap2 \
     libtool \
     pcaputils \
-&& pip3 install rrdtool
+    python-rrdtool
 
 COPY files/* /opt/monroe/
 RUN dpkg -i /opt/monroe/tstat_3.1-1_amd64.deb \
