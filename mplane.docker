@@ -4,30 +4,25 @@ FROM monroe/base
 
 MAINTAINER ali.safari@polito.it
 
+COPY files/ /opt/monroe/
 # Installing PACKAGES
-RUN apt-get update \
-&& apt-get upgrade -y \
-&& apt-get install -y \
-    rrdtool  \
-    librrd-dev \
+
+RUN apt-get update  && apt-get upgrade -y --force-yes && apt-get install -y --force-yes --no-install-recommends  --no-install-suggests \
     libcap2 \
     libtool \
     pcaputils \
-    python-rrdtool
-
-COPY files/* /opt/monroe/
-RUN dpkg -i /opt/monroe/tstat_3.1-1_amd64.deb \
-&& rm -rf /opt/monroe/tstat_3.1-1_amd64.deb \
-&& apt-get -y autoclean  \
-&& apt-get -y autoremove \
-&& rm -rf  /var/lib/apt  \
-&& rm -rf  /usr/lib/gcc \
-&& find /usr/share/doc -depth -type f ! -name copyright|xargs rm || true \ 
-&& find /usr/share/doc -empty|xargs rmdir || true \ 
-&& rm -rf /usr/share/man/* /usr/share/groff/* /usr/share/info/* /usr/share/lintian/* /usr/share/linda/* /var/cache/man/*
-
-
-COPY monroe-mplane /opt/monroe/monroe-mplane/
+    python-rrdtool \
+;   apt-get update --fix-missing \
+;   apt-get --force-yes clean ; apt-get --force-yes autoremove \
+;   rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/doc /usr/share/man /usr/share/locale \
+;   dpkg -i /opt/monroe/tstat_3.1-1_amd64.deb && rm -rf /opt/monroe/tstat_3.1-1_amd64.deb \ 
+;   apt-get -y --force-yes clean  \
+;   apt-get -y --force-yes autoclean  \
+;   apt-get -y --force-yes autoremove \
+;   rm -rf  /var/lib/apt  \
+;   rm -rf  /usr/lib/gcc \
+;   find /usr/share/doc -depth -type f ! -name copyright|xargs rm || true \ 
+;   rm -rf /usr/share/man/* /usr/share/groff/* /usr/share/info/* /usr/share/lintian/* /usr/share/linda/* /var/cache/man/*
 
 WORKDIR /opt/monroe/monroe-mplane/
 

@@ -35,7 +35,6 @@ RSYNC_DIR="/monroe/results/"$NODE_ID
 SHARED_DIR="/monroe/tstat/"$NODE_ID
 TSTAT_DIR="/opt/monroe/monroe-mplane/tstat-conf/"
 
-
 if [ ! -d $RSYNC_DIR ]
 then
     mkdir -p $RSYNC_DIR    
@@ -70,7 +69,7 @@ do
         fi
 
         if [ $TIMER -ge 30 ]; then
-            curl --interface $INTERFACE 192.168.0.1  &
+            curl --interface $INTERFACE 192.168.0.1  2>>$LOG_DIR 1>>$LOG_DIR &
         fi
 
 
