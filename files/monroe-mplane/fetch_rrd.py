@@ -16,7 +16,7 @@ import gzip
 
 # interval is 300 seconds for Tstat by default 
 
-def fetch_Tstat_RRD( path, output_path,interval=300):
+def fetch_Tstat_RRD( path, output_path,default_interval=300):
     """
     fetch all RRD files and dump them in compress file for each time
     the file create in the rsync  direcctory
@@ -24,6 +24,7 @@ def fetch_Tstat_RRD( path, output_path,interval=300):
     """
     print ("UTC start time : " , time())
     while True:
+        interval = default_interval
         if (not isdir (path)):
             print ("RRD directory does not exist !\n ")
             continue
@@ -35,12 +36,11 @@ def fetch_Tstat_RRD( path, output_path,interval=300):
             # fetch RRD files till the process killed by the function -> change_conf_indirect_export
             result_list = []
             if(last_fetched_time == 0):
-                startTime = str (int(time()) - interval)
+                startTime = int(time()) - interval
             else:
-                startTime = str(last_fetched_time)
+                startTime = last_fetched_time
 
-
-            endTime = str (int(time()))
+            endTime = int(time())
 
             if endTime < startTime:
                 print("Start time is after End time!!!!!!!!!!!!!!" )
@@ -48,7 +48,7 @@ def fetch_Tstat_RRD( path, output_path,interval=300):
 
             rrd_files = [ f for f in listdir(join(path,interface)) if isfile(join(path,interface,f)) and (".rrd" in f) ]
             for f in rrd_files :
-                rrdMetric = rrdtool.fetch( join(path,interface,f),  "AVERAGE" ,'--resolution', str(interval), '-s', startTime, '-e', endTime)
+                rrdMetric = rrdtool.fetch( join(path,interface,f),  "AVERAGE" ,'--resolution', str(interval), '-s', str (startTime), '-e', str(endTime))
                 rrd_time = rrdMetric[0][0]
                 last_fetched_time = rrdMetric[0][0] 
                 interval = rrdMetric[0][2]
