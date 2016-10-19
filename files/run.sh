@@ -66,7 +66,7 @@ do
             ip -f inet addr show $INTERFACE | grep -Po 'inet \K[\d./]+' > $TSTAT_DIR$INTERFACE"_subnets.txt"
             echo "10.0.0.0/8" >>  $TSTAT_DIR$INTERFACE"_subnets.txt"
             tstat -l -i $INTERFACE -f $TSTAT_DIR"filter.txt" -N $TSTAT_DIR$INTERFACE"_subnets.txt" -R $TSTAT_DIR"rrd.conf" -H $TSTAT_DIR"histo.conf" -T $TSTAT_DIR"runtime.conf" -r $SHARED_DIR"/tstat_rrd/"$INTERFACE -s $SHARED_DIR/$INTERFACE  &    
-            rm $SHARED_DIR"/tstat_rrd/"$INTERFACE"/latest_fetched_data.txt" || true
+            rm -f $SHARED_DIR"/tstat_rrd/"$INTERFACE"/latest_fetched_data.txt" || true
         fi
 
         if [ $TIMER -ge 30 -a $INTERFACE != "eth0"  ]; then
