@@ -9,10 +9,10 @@ A new branch in mPlane page added for Monroe project, see [here](https://github.
 
 The mPlane experiment directory contains the Tstat v.3 debian package and script to make docker image and run the tstat in run.sh. 
 
-Tstat RRD logs and compressed log stored on host node in /experiments/monroe/mplane respectively. These are exported to the monroe remote repository via management interface. The latest three generated Tstat's logs are shared with monroe experimenters on the "/experiments/monroe/tstat", it helps the Monroe users to use passive traces collected by Tstat during their experiment. 
+Tstat RRD logs and compressed log stored on host node in /experiments/monroe/mplane respectively. These are exported to the monroe remote repository via management interface. The latest three generated Tstat's logs are shared with monroe experimenters on the "/monroe/tstat", it helps the Monroe users to use passive traces collected by Tstat during their experiment. 
+The Tstat logs are imported into MONROE database, you can find the schema of the tables [here](https://github.com/MONROE-PROJECT/Database/blob/master/db_schema.cql).
 
-
-The mplane docker image pushed into monroe/mplane. 
+The mplane docker image pushed into [monroe/mplane](https://hub.docker.com/r/monroe/mplane/). 
 
 
 ## Requirements
