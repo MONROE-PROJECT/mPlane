@@ -26,4 +26,4 @@ RUN apt-get update  && apt-get upgrade -y --force-yes && apt-get install -y --fo
 
 WORKDIR /opt/monroe/monroe-mplane/
 
-ENTRYPOINT ["/bin/sh", "/opt/monroe/run.sh"]
+ENTRYPOINT ["dumb-init", "--", "/usr/bin/python", "/opt/monroe/experiment.py"]
