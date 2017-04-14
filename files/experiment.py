@@ -18,7 +18,7 @@ from time import sleep, time, mktime
 from subprocess import check_output, CalledProcessError
 from multiprocessing import Process, Manager
 from os import mkdir,rename,listdir,remove,system,makedirs
-from os.path import isfile,join,isdir
+from os.path import isfile,join,isdir,getsize
 from shutil import rmtree
 
 
@@ -29,7 +29,8 @@ Default_conf = {
         "nodeid": "fake.nodeid",
         "rsync_dir" : "/monroe/results/",
         "shared_dir" : "/monroe/tstat/",
-        "tstat_dir" : "/opt/monroe/monroe-mplane/tstat-conf/", 
+        "tstat_dir" : "/opt/monroe/monroe-mplane/tstat-conf/",
+        "log_dir" : "/tmp/", 
         "verbosity": 2,  
         "modeminterfacename": "InternalInterface",
         "disabled_interfaces": ["lo",
@@ -47,11 +48,12 @@ def fetch_Tstat_RRD( path, output_path,default_interval=300):
     the file create in the rsync  direcctory
 
     """
-    open(join(EXPCONFIG["rsync_dir"],"log.txt"),"a").write ("RRD UTC start time : {} \n".format( time()))
+    open(EXPCONFIG["log_dir"],"a").write ("RRD UTC start time : {} \n".format( time()))
     while True:
         interval = default_interval
         if (not isdir (path)):
-            open(join(EXPCONFIG["rsync_dir"],"log.txt"),"a").write ("RRD directory does not exist !\n ")
+            open(EXPCONFIG["log_dir"],"a").write ("RRD directory does not exist ! creating the directory.\n")
+            mkdir(path)
             continue
 
         Interface_list = [ d for d in listdir(path) if isdir(join(path,d)) and not d.startswith("op") ]
@@ -68,7 +70,7 @@ def fetch_Tstat_RRD( path, output_path,default_interval=300):
             endTime = int(time())
 
             if endTime < startTime:
-                open(join(EXPCONFIG["rsync_dir"],"log.txt"),"a").write("Start time is after End time!!!!!!!!!!!!!! \n" )
+                open(EXPCONFIG["log_dir"],"a").write("Start time is after End time!!!!!!!!!!!!!! \n" )
                 startTime = endTime - interval
 
             rrd_files = [ f for f in listdir(join(path,interface)) if isfile(join(path,interface,f)) and (".rrd" in f) ]
@@ -108,7 +110,7 @@ def write_into_file(path, interface, result_list):
                     f_out.writelines(f_in)
             remove(join(path,interface,pickle_file))
         except Exception as e:
-            open(join(EXPCONFIG["rsync_dir"],"log.txt"),"a").write ("Error in compressing file {0} \n".format(e))
+            open(EXPCONFIG["log_dir"],"a").write ("Error in compressing file {0} \n".format(e))
 
 def read_latest_fetched_data(path,interface):
     if ( isdir (join(path,interface) ) and isfile(join(path,interface,"latest_fetched_data.txt")) ) :
@@ -155,7 +157,7 @@ def run_tstat(meta_info, EXPCONFIG):
     subnet_file = open(join(EXPCONFIG["tstat_dir"],iccid+"_subnets.txt"),"w")
     subnet_file.write(ip+"/32\n")
     subnet_file.close()
-    open(join(EXPCONFIG["rsync_dir"],"log.txt"),"a").write("Tstat consider %s ip as internal for interface %s with iccid %s \n" %(ip+"/32",ifname,iccid))
+    open(EXPCONFIG["log_dir"],"a").write("Tstat consider %s ip as internal for interface %s with iccid %s \n" %(ip+"/32",ifname,iccid))
 
  
     if validate_ip(ip):
@@ -227,7 +229,7 @@ def metadata(meta_ifinfo, EXPCONFIG):
                 for key, value in ifinfo.iteritems():
                     metadata[key] = value
         except Exception as e:
-            open(join(EXPCONFIG["rsync_dir"],"log.txt"),"a").write("Cannot get modem metadata in http container {0}, {1} \n").format(e, EXPCONFIG['guid'])
+            open(EXPCONFIG["log_dir"],"a").write("Cannot get modem metadata in http container {0}, {1} \n").format(e, EXPCONFIG['guid'])
             pass
         if "ICCID" in str(metadata): 
             meta_ifinfo[metadata["ICCID"]] = metadata
@@ -246,7 +248,8 @@ def check_meta(info, EXPCONFIG):
             "Operator" in info and
             "Timestamp" in info and
             "ICCID" in info ): 
-        if (info ["ICCID"] != "None"):
+        if (info ["ICCID"] != "None" and 
+            info[EXPCONFIG["modeminterfacename"]] != "None"):
             return True
 
     return False
@@ -308,7 +311,7 @@ def compress_and_rsync(EXPCONFIG):
             sleep(5)
 
     except Exception as e:
-        open(join(EXPCONFIG["rsync_dir"],"log.txt"),"a").write ("Compress or rsync failed for exception : {} \n".format(e))
+        open(EXPCONFIG["log_dir"],"a").write ("Compress or rsync failed for exception : {} \n".format(e))
         return
 
 def set_config(EXPCONFIG):
@@ -320,8 +323,8 @@ def set_config(EXPCONFIG):
     except Exception as e:
         print "Error in reading node id from /nodeid {}".format(e)
         raise e
-    # FIXME clean all empty folder from previous run and previous log 
-    system ("find {}  -type f  -delete -name 'log.txt' ;find {}  -type d -empty -delete ; find {}  -type d -empty -delete ; rm  -rf {}/*/tstat_rrd/op*;".format(EXPCONFIG["rsync_dir"],EXPCONFIG["rsync_dir"],EXPCONFIG["shared_dir"],EXPCONFIG["shared_dir"]))   
+    # FIXME clean all empty folder from previous run 
+    system ("find {}  -type d -empty -delete ; find {}  -type d -empty -delete ; rm  -rf {}/*/tstat_rrd/op*;".format(EXPCONFIG["rsync_dir"],EXPCONFIG["rsync_dir"],EXPCONFIG["shared_dir"],EXPCONFIG["shared_dir"]))   
     # Just to clean the old logs till here FIXME
 
     # making sub directory to store logs and RRD
@@ -330,9 +333,9 @@ def set_config(EXPCONFIG):
     if not isdir(join(EXPCONFIG["shared_dir"],EXPCONFIG["nodeid"],"tstat_rrd")):
         makedirs(join(EXPCONFIG["shared_dir"],EXPCONFIG["nodeid"],"tstat_rrd"))
 
-    EXPCONFIG["rsync_dir"]=join(EXPCONFIG["rsync_dir"],EXPCONFIG["nodeid"])
+    EXPCONFIG["rsync_dir"] =join(EXPCONFIG["rsync_dir"],EXPCONFIG["nodeid"])
     EXPCONFIG["shared_dir"]=join(EXPCONFIG["shared_dir"],EXPCONFIG["nodeid"])
-
+    EXPCONFIG["log_dir"]   =join(EXPCONFIG["rsync_dir"],"log.txt") 
 
 if __name__ == '__main__':
     """The main thread control the processes (tstat/metadata/rrdfetch))."""
@@ -342,7 +345,7 @@ if __name__ == '__main__':
     # dictionary to store process id for each process 
     process_dic={}
 
-    open(join(EXPCONFIG["rsync_dir"],"log.txt"),"w").write ("TStat cotainer starts at : {} \n".format( time()))
+    open(EXPCONFIG["log_dir"],"w").write ("TStat cotainer starts at : {} \n".format( time()))
     while  True:
         try:
             # Create a process for getting the metadata
@@ -356,12 +359,12 @@ if __name__ == '__main__':
                 # Skip disbaled interfaces
                 if ifname in EXPCONFIG["disabled_interfaces"]:
                     if EXPCONFIG['verbosity'] > 3:
-                        open(join(EXPCONFIG["rsync_dir"],"log.txt"),"a").write( "Interface is disabled skipping, {} \n".format(ifname))
+                        open(EXPCONFIG["log_dir"],"a").write( "Interface is disabled skipping, {} \n".format(ifname))
                     continue
                 # Interface is not up we just skip that one
                 if not check_if(ifname):
                     if EXPCONFIG['verbosity'] > 3:
-                        open(join(EXPCONFIG["rsync_dir"],"log.txt"),"a").write ("Interface is not up {} \n".format(ifname))
+                        open(EXPCONFIG["log_dir"],"a").write ("Interface is not up {} \n".format(ifname))
                     continue
                 # we hack metadata for interfaces without metadata
                 if (check_if(ifname) and ifname in EXPCONFIG["interfaces_without_metadata"]):
@@ -372,12 +375,12 @@ if __name__ == '__main__':
                 # we give up on that interface
                 if not check_meta(meta_info, EXPCONFIG):
                     if EXPCONFIG['verbosity'] > 1:
-                        open(join(EXPCONFIG["rsync_dir"],"log.txt"),"a").write( "No Metadata continuing -> \t")
-                        open(join(EXPCONFIG["rsync_dir"],"log.txt"),"a").write( "{} \n".format(meta_info))
+                        open(EXPCONFIG["log_dir"],"a").write( "No Metadata continuing -> \t")
+                        open(EXPCONFIG["log_dir"],"a").write( "{} \n".format(meta_info))
                     continue
                 if meta_info["ICCID"] not in process_dic or not process_dic[meta_info["ICCID"]].is_alive(): 
                     if EXPCONFIG['verbosity'] > 1:
-                        open(join(EXPCONFIG["rsync_dir"],"log.txt"),"a").write ( "Starting Tstat on operator %s with iccid %s \n"%(meta_info[EXPCONFIG["modeminterfacename"]], meta_info["ICCID"]))  
+                        open(EXPCONFIG["log_dir"],"a").write ( "Starting Tstat on operator %s with iccid %s \n"%(meta_info[EXPCONFIG["modeminterfacename"]], meta_info["ICCID"]))  
                     # Create a experiment process and start it
                     exp_process = create_tstat_process(meta_info, EXPCONFIG)
                     exp_process.start()
@@ -385,13 +388,17 @@ if __name__ == '__main__':
 
             # Create a process for fetching the rrd
             if "rrd" not in process_dic or not process_dic["rrd"].is_alive():
-                open(join(EXPCONFIG["rsync_dir"],"log.txt"),"a").write ( "Starting rrd fetch \n") 
+                open(EXPCONFIG["log_dir"],"a").write ( "Starting rrd fetch \n") 
                 rrd_process = create_rrd_process(EXPCONFIG)
                 rrd_process.start()
                 process_dic["rrd"] = rrd_process
         
             compress_and_rsync(EXPCONFIG)
+
+            #if log is greater than 1MB rename it to be exported
+            if  isfile(EXPCONFIG["log_dir"]) and getsize(EXPCONFIG["log_dir"])>1000000:
+                rename(EXPCONFIG["log_dir"],join(EXPCONFIG["rsync_dir"],"log_{}.gz".format(time())))
             sleep (10)
 
         except Exception as e:
-            open(join(EXPCONFIG["rsync_dir"],"log.txt"),"a").write ("The Tstat container should live forever ! Error happened {0} \n".format(e))
+            open(EXPCONFIG["log_dir"],"a").write ("The Tstat container should live forever ! Error happened {0} \n".format(e))
