@@ -187,9 +187,6 @@ def run_tstat(meta_info, EXPCONFIG):
     err_code = 0
     try:
         try:
-            # Removing the old fetched data file
-            if isfile(join(EXPCONFIG["shared_dir"],"tstat_rrd/",iccid,"latest_fetched_data.txt")):
-                remove(join(EXPCONFIG["shared_dir"],"tstat_rrd/",iccid,"latest_fetched_data.txt"))
             # Write the interface meta data to use tstat proxy
             # Proxy knows iccid mapping to interface name
             if not isdir(join(EXPCONFIG["rsync_dir"],iccid)):
@@ -248,10 +245,8 @@ def check_meta(info, EXPCONFIG):
     if (EXPCONFIG["modeminterfacename"] in info and
             "Operator" in info and
             "Timestamp" in info and
-            "ICCID" in info and 
-            "InternalIPAddress" in info): 
-        if (info [EXPCONFIG["modeminterfacename"]] != "None" and 
-            info ["ICCID"] != "None"):
+            "ICCID" in info ): 
+        if (info ["ICCID"] != "None"):
             return True
 
     return False
@@ -320,11 +315,13 @@ def set_config(EXPCONFIG):
     """ setting the nodeid and create subdirectory to store logs 
      reading the node id from file mounted on /nodeid 
     """
+    """
     try: 
         EXPCONFIG["nodeid"]=open("/nodeid","r").readline().strip()
     except Exception as e:
         print "Error in reading node id from /nodeid {}".format(e)
         raise e
+    """
     # FIXME clean all empty folder from previous run 
     system ("find {}  -type d -empty -delete ; find {}  -type d -empty -delete ; rm  -rf {}/*/tstat_rrd/op*;".format(EXPCONFIG["rsync_dir"],EXPCONFIG["shared_dir"],EXPCONFIG["shared_dir"]))   
     # Just to clean the old logs till here FIXME
@@ -349,50 +346,54 @@ if __name__ == '__main__':
 
     open(join(EXPCONFIG["rsync_dir"],"log.txt"),"w").write ("TStat cotainer starts at : {} \n".format( time()))
     while  True:
+        try:
+            # Create a process for getting the metadata
+            if "meta_data" not in process_dic or not process_dic["meta_data"].is_alive(): 
+                meta_info_dic, meta_process = create_meta_process(EXPCONFIG)
+                meta_process.start()
+                process_dic["meta_data"] = meta_process
 
-        # Create a process for getting the metadata
-        if "meta_data" not in process_dic or not process_dic["meta_data"].is_alive(): 
-            meta_info_dic, meta_process = create_meta_process(EXPCONFIG)
-            meta_process.start()
-            process_dic["meta_data"] = meta_process
+            # hack metadata for inerfaces without metadata    
+            for ifname in netifaces.interfaces():
+                # Skip disbaled interfaces
+                if ifname in EXPCONFIG["disabled_interfaces"]:
+                    if EXPCONFIG['verbosity'] > 3:
+                        open(join(EXPCONFIG["rsync_dir"],"log.txt"),"a").write( "Interface is disabled skipping, {} \n".format(ifname))
+                    continue
+                # Interface is not up we just skip that one
+                if not check_if(ifname):
+                    if EXPCONFIG['verbosity'] > 3:
+                        open(join(EXPCONFIG["rsync_dir"],"log.txt"),"a").write ("Interface is not up {} \n".format(ifname))
+                    continue
+                # we hack metadata for interfaces without metadata
+                if (check_if(ifname) and ifname in EXPCONFIG["interfaces_without_metadata"]):
+                    add_manual_metadata_information(meta_info_dic, ifname, EXPCONFIG)
 
-        # hack metadata for inerfaces without metadata    
-        for ifname in netifaces.interfaces():
-            # Skip disbaled interfaces
-            if ifname in EXPCONFIG["disabled_interfaces"]:
-                if EXPCONFIG['verbosity'] > 3:
-                    open(join(EXPCONFIG["rsync_dir"],"log.txt"),"a").write( "Interface is disabled skipping, {} \n".format(ifname))
-                continue
-            # Interface is not up we just skip that one
-            if not check_if(ifname):
-                if EXPCONFIG['verbosity'] > 3:
-                    open(join(EXPCONFIG["rsync_dir"],"log.txt"),"a").write ("Interface is not up {} \n".format(ifname))
-                continue
-            # we hack metadata for interfaces without metadata
-            if (check_if(ifname) and ifname in EXPCONFIG["interfaces_without_metadata"]):
-                add_manual_metadata_information(meta_info_dic, ifname, EXPCONFIG)
+            # loop to run tstat for all available interfaces 
+            for iccid, meta_info  in  meta_info_dic.items():
+                # we give up on that interface
+                if not check_meta(meta_info, EXPCONFIG):
+                    if EXPCONFIG['verbosity'] > 1:
+                        open(join(EXPCONFIG["rsync_dir"],"log.txt"),"a").write( "No Metadata continuing -> \t")
+                        open(join(EXPCONFIG["rsync_dir"],"log.txt"),"a").write( "{} \n".format(meta_info))
+                    continue
+                if meta_info["ICCID"] not in process_dic or not process_dic[meta_info["ICCID"]].is_alive(): 
+                    if EXPCONFIG['verbosity'] > 1:
+                        open(join(EXPCONFIG["rsync_dir"],"log.txt"),"a").write ( "Starting Tstat on operator %s with iccid %s \n"%(meta_info[EXPCONFIG["modeminterfacename"]], meta_info["ICCID"]))  
+                    # Create a experiment process and start it
+                    exp_process = create_tstat_process(meta_info, EXPCONFIG)
+                    exp_process.start()
+                    process_dic[meta_info["ICCID"]] = exp_process
 
-        # loop to run tstat for all available interfaces 
-        for iccid, meta_info  in  meta_info_dic.items():
-            # we give up on that interface
-            if not check_meta(meta_info, EXPCONFIG):
-                if EXPCONFIG['verbosity'] > 1:
-                    open(join(EXPCONFIG["rsync_dir"],"log.txt"),"a").write( "No Metadata continuing \n")
-                continue
-            if meta_info["ICCID"] not in process_dic or not process_dic[meta_info["ICCID"]].is_alive(): 
-                if EXPCONFIG['verbosity'] > 1:
-                    open(join(EXPCONFIG["rsync_dir"],"log.txt"),"a").write ( "Starting Tstat on operator %s with iccid %s \n"%(meta_info[EXPCONFIG["modeminterfacename"]], meta_info["ICCID"]))  
-                # Create a experiment process and start it
-                exp_process = create_tstat_process(meta_info, EXPCONFIG)
-                exp_process.start()
-                process_dic[meta_info["ICCID"]] = exp_process
+            # Create a process for fetching the rrd
+            if "rrd" not in process_dic or not process_dic["rrd"].is_alive():
+                open(join(EXPCONFIG["rsync_dir"],"log.txt"),"a").write ( "Starting rrd fetch \n") 
+                rrd_process = create_rrd_process(EXPCONFIG)
+                rrd_process.start()
+                process_dic["rrd"] = rrd_process
+        
+            compress_and_rsync(EXPCONFIG)
+            sleep (10)
 
-        # Create a process for fetching the rrd
-        if "rrd" not in process_dic or not process_dic["rrd"].is_alive():
-            open(join(EXPCONFIG["rsync_dir"],"log.txt"),"a").write ( "Starting rrd fetch \n") 
-            rrd_process = create_rrd_process(EXPCONFIG)
-            rrd_process.start()
-            process_dic["rrd"] = rrd_process
-    
-        compress_and_rsync(EXPCONFIG)
-        sleep (10)
+        except Exception as e:
+            open(join(EXPCONFIG["rsync_dir"],"log.txt"),"a").write ("The Tstat container should live forever ! Error happened {0} \n".format(e))
