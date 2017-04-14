@@ -315,15 +315,13 @@ def set_config(EXPCONFIG):
     """ setting the nodeid and create subdirectory to store logs 
      reading the node id from file mounted on /nodeid 
     """
-    """
     try: 
         EXPCONFIG["nodeid"]=open("/nodeid","r").readline().strip()
     except Exception as e:
         print "Error in reading node id from /nodeid {}".format(e)
         raise e
-    """
-    # FIXME clean all empty folder from previous run 
-    system ("find {}  -type d -empty -delete ; find {}  -type d -empty -delete ; rm  -rf {}/*/tstat_rrd/op*;".format(EXPCONFIG["rsync_dir"],EXPCONFIG["shared_dir"],EXPCONFIG["shared_dir"]))   
+    # FIXME clean all empty folder from previous run and previous log 
+    system ("find {}  -type f  -delete -name 'log.txt' ;find {}  -type d -empty -delete ; find {}  -type d -empty -delete ; rm  -rf {}/*/tstat_rrd/op*;".format(EXPCONFIG["rsync_dir"],EXPCONFIG["rsync_dir"],EXPCONFIG["shared_dir"],EXPCONFIG["shared_dir"]))   
     # Just to clean the old logs till here FIXME
 
     # making sub directory to store logs and RRD

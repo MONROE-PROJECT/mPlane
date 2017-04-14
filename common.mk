@@ -33,7 +33,7 @@ push:
 	docker push  $(REPO)/$(CONTAINERTAG)
 
 image:
-	docker build -f  --rm --no-cache -f $(DOCKERFILE) -t $(CONTAINERTAG):test .  
+	docker build -f  --rm --no-cache -f $(DOCKERFILE) -t $(CONTAINERTAG):latest .  
 
 run-local: stop
 	@echo "Starting container."
