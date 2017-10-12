@@ -229,7 +229,7 @@ def metadata(meta_ifinfo, EXPCONFIG):
                 for key, value in ifinfo.iteritems():
                     metadata[key] = value
         except Exception as e:
-            open(EXPCONFIG["log_dir"],"a").write("Cannot get modem metadata in http container {0}, {1} \n").format(e, EXPCONFIG['guid'])
+            open(EXPCONFIG["log_dir"],"a").write("Cannot get modem metadata in http container {0} \n").format(e)
             pass
         if "ICCID" in str(metadata): 
             meta_ifinfo[metadata["ICCID"]] = metadata
