@@ -91,6 +91,7 @@ def fetch_Tstat_RRD( path, output_path,default_interval=300):
             if len(result_list) > 0:
                 write_into_file(output_path, interface,result_list)
             write_latest_fetched_date( path,interface,last_fetched_time)
+            sleep(5)
         sleep(30)
 
 
@@ -229,10 +230,12 @@ def metadata(meta_ifinfo, EXPCONFIG):
                 for key, value in ifinfo.iteritems():
                     metadata[key] = value
         except Exception as e:
-            open(EXPCONFIG["log_dir"],"a").write("Cannot get modem metadata in http container {0} \n".format(e))
+            open(EXPCONFIG["log_dir"],"a").write("Cannot get modem metadata in container {0} \n".format(e))
+            sleep(1)
             pass
         if "ICCID" in str(metadata): 
             meta_ifinfo[metadata["ICCID"]] = metadata
+        sleep(1)
 
 
 # Helper functions
@@ -308,7 +311,7 @@ def compress_and_rsync(EXPCONFIG):
                 if len (logs_dir_list) > 3 and log_dir in logs_dir_list[3:]:
                     cmd += "rm -rf %s"%join(EXPCONFIG["shared_dir"],interface_dir,log_dir)
                 system(cmd)
-            sleep(5)
+            sleep(10)
 
     except Exception as e:
         open(EXPCONFIG["log_dir"],"a").write ("Compress or rsync failed for exception : {} \n".format(e))
@@ -330,8 +333,11 @@ def set_config(EXPCONFIG):
     # making sub directory to store logs and RRD
     if not isdir(join(EXPCONFIG["rsync_dir"],EXPCONFIG["nodeid"])):
         makedirs(join(EXPCONFIG["rsync_dir"],EXPCONFIG["nodeid"]))
-    if not isdir(join(EXPCONFIG["shared_dir"],EXPCONFIG["nodeid"],"tstat_rrd")):
-        makedirs(join(EXPCONFIG["shared_dir"],EXPCONFIG["nodeid"],"tstat_rrd"))
+
+    # remove the rrds to avoid looping to the replaces SIMs
+    rmtree(join(EXPCONFIG["shared_dir"],EXPCONFIG["nodeid"],"tstat_rrd"),ignore_errors=True)
+    makedirs(join(EXPCONFIG["shared_dir"],EXPCONFIG["nodeid"],"tstat_rrd"))
+
 
     EXPCONFIG["rsync_dir"] =join(EXPCONFIG["rsync_dir"],EXPCONFIG["nodeid"])
     EXPCONFIG["shared_dir"]=join(EXPCONFIG["shared_dir"],EXPCONFIG["nodeid"])
@@ -398,7 +404,8 @@ if __name__ == '__main__':
             #if log is greater than 1MB rename it to be exported
             if  isfile(EXPCONFIG["log_dir"]) and getsize(EXPCONFIG["log_dir"])>1000000:
                 rename(EXPCONFIG["log_dir"],join(EXPCONFIG["rsync_dir"],"log_{}.gz".format(time())))
-            sleep (10)
+            sleep (30)
 
         except Exception as e:
             open(EXPCONFIG["log_dir"],"a").write ("The Tstat container should live forever ! Error happened {0} \n".format(e))
+            sleep (10)
