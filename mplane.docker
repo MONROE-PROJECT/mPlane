@@ -1,13 +1,13 @@
 # Make the mplane image from the monroe_base
 
-FROM monroe/base
+FROM monroe/base:cli
 
 MAINTAINER ali.safari@polito.it
 
 COPY files/ /opt/monroe/
 # Installing PACKAGES
 
-RUN apt-get update  && apt-get upgrade -y  && apt-get install -y  --no-install-recommends  --no-install-suggests \
+RUN apt-get update  && apt-get install -y  --no-install-recommends  --no-install-suggests \
     libcap2 \
     libtool \
     pcaputils \
