@@ -40,14 +40,12 @@ Default_conf = {
         "interfaces_without_metadata": ["eth0",
                                         "wlan0"]  # Manual metadata on these IF
         }
-
+"""
 # interval is 300 seconds for Tstat by default 
 def fetch_Tstat_RRD( path, output_path,default_interval=300):
-    """
-    fetch all RRD files and dump them in compress file for each time
-    the file create in the rsync  direcctory
+    #fetch all RRD files and dump them in compress file for each time
+    #the file create in the rsync  direcctory
 
-    """
     open(EXPCONFIG["log_dir"],"a").write ("RRD UTC start time : {} \n".format( time()))
     while True:
         interval = default_interval
@@ -127,7 +125,7 @@ def create_rrd_process(EXPCONFIG):
                       args=(join(EXPCONFIG["shared_dir"],"tstat_rrd/"), EXPCONFIG["rsync_dir"],300, ))
     process.daemon = True
     return (process)
-
+"""
 def validate_ip(s):
     a = s.split('.')
     if len(a) != 4:
@@ -391,14 +389,14 @@ if __name__ == '__main__':
                     exp_process = create_tstat_process(meta_info, EXPCONFIG)
                     exp_process.start()
                     process_dic[meta_info["ICCID"]] = exp_process
-
+            """
             # Create a process for fetching the rrd
             if "rrd" not in process_dic or not process_dic["rrd"].is_alive():
                 open(EXPCONFIG["log_dir"],"a").write ( "Starting rrd fetch \n") 
                 rrd_process = create_rrd_process(EXPCONFIG)
                 rrd_process.start()
                 process_dic["rrd"] = rrd_process
-        
+            """       
             compress_and_rsync(EXPCONFIG)
 
             #if log is greater than 1MB rename it to be exported
